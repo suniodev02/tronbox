@@ -174,7 +174,10 @@ module.exports = {
       }
 
       function include(import_path) {
-        required[import_path] = dependsGraph.node(import_path)
+	if (import_path.endsWith(".sol")) {
+	  // Now only require solidity file
+          required[import_path] = dependsGraph.node(import_path)
+	}
       }
 
       function walk_down(import_path) {
@@ -210,16 +213,26 @@ module.exports = {
         }
       }
 
-      paths.forEach(walk_from)
+      // paths.forEach(walk_from)
+      let new_paths = dependsGraph.nodes()
+      new_paths.forEach(walk_from)
 
       done(null, required)
     }
-
+    
     find_contracts(options.base_path, function (err, allPaths) {
       if (err) return callback(err)
 
       // Include paths for Solidity .sols, specified in options.
       allPaths = allPaths.concat(paths)
+
+      let temp = []
+      for (const element of allPaths) {
+	if (element.endsWith('.sol')) {
+	  temp.push(element)
+	}
+      }
+      allPaths = temp
 
       self.dependency_graph(allPaths, options.resolver, function (err, dependsGraph) {
         if (err) return callback(err)
@@ -280,8 +293,6 @@ module.exports = {
             return finished()
           }
 
-          // Add the contract to the depends graph.
-          dependsGraph.setNode(resolved_path, resolved_body)
 
           let imports
 
@@ -289,8 +300,12 @@ module.exports = {
             imports = Parser.parseImports(resolved_body, resolver.options)
           } catch (e) {
             e.message = 'Error parsing ' + import_path + ': ' + e.message
-            return finished(e)
+	    // return finished(e)
+            return finished()
           }
+
+          // Add the contract to the depends graph.
+          dependsGraph.setNode(resolved_path, resolved_body)
 
           // Convert explicitly relative dependencies of modules
           // back into module paths. We also use this loop to update

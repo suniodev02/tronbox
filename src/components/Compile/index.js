@@ -312,7 +312,6 @@ compile.with_dependencies = function (options, callback) {
     'contracts_directory',
     'resolver'
   ])
-
   const config = Config.default().merge(options)
 
   Profiler.required_sources(config.with({
